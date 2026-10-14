@@ -1,0 +1,27 @@
+# 依存・ビルド成果物
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# 環境変数(雛形の .env.example だけ管理する)
+.env
+.env.*
+!.env.example
+
+# Prisma の生成物(prisma generate / migrate dev で再生成される)
+backend/src/generated/
+
+# 個人情報を含む書類(履歴書・職務経歴書など)
+*.pdf
+private/
+
+# ログ
+*.log
+npm-debug.log*
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.idea/
