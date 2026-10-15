@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:18
+    container_name: self-introduce-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: self_introduce
+    ports:
+      - "5432:5432"
+    volumes:
+      # /var/lib/postgresql
+      - db-data:/var/lib/postgresql
+
+volumes:
+  db-data:
