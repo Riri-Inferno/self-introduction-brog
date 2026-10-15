@@ -15,9 +15,9 @@
     <a href="#about-the-project"><strong>ドキュメントを読む »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/Riri-Inferno/self-introduce/issues/new">不具合を報告</a>
+    <a href="https://github.com/Riri-Inferno/self-introduction-brog/issues/new">不具合を報告</a>
     &middot;
-    <a href="https://github.com/Riri-Inferno/self-introduce/issues/new">機能を提案</a>
+    <a href="https://github.com/Riri-Inferno/self-introduction-brog/issues/new">機能を提案</a>
   </p>
 </div>
 
@@ -141,7 +141,7 @@ self-introduce/
 1. リポジトリを取得します。
    ```sh
    # 実行場所: 任意
-   git clone https://github.com/Riri-Inferno/self-introduce.git
+   git clone https://github.com/Riri-Inferno/self-introduction-brog.git self-introduce
    ```
 2. DB を起動します。
    ```sh
@@ -205,7 +205,7 @@ schema.prisma を変えたときの手順は、[docs/setup.md の「スキーマ
     - [ ] 編集画面
 - [ ] インフラの認証と、管理用 API の JWT 検証(ADR 0012)
 
-未実装の機能と既知の問題は、[Issues](https://github.com/Riri-Inferno/self-introduce/issues) にまとめます。
+未実装の機能と既知の問題は、[Issues](https://github.com/Riri-Inferno/self-introduction-brog/issues) にまとめます。
 
 <p align="right">(<a href="#readme-top">先頭へ戻る</a>)</p>
 
@@ -229,7 +229,7 @@ schema.prisma を変えたときの手順は、[docs/setup.md の「スキーマ
 <a id="license"></a>
 ## ライセンス
 
-未定です。決まり次第、`LICENSE` ファイルを追加します。
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)(クリエイティブ・コモンズ 表示 - 非営利 4.0 国際)で公開しています。詳しくは [LICENSE](LICENSE) を参照してください。
 
 <p align="right">(<a href="#readme-top">先頭へ戻る</a>)</p>
 
@@ -237,9 +237,9 @@ schema.prisma を変えたときの手順は、[docs/setup.md の「スキーマ
 <a id="contact"></a>
 ## 連絡先
 
-`<名前>` - `<連絡先>`
+`T.U` - `準備中`
 
-プロジェクトの URL: [https://github.com/Riri-Inferno/self-introduce](https://github.com/Riri-Inferno/self-introduce)
+プロジェクトの URL: [https://github.com/Riri-Inferno/self-introduction-brog](https://github.com/Riri-Inferno/self-introduction-brog)
 
 <p align="right">(<a href="#readme-top">先頭へ戻る</a>)</p>
 
@@ -253,10 +253,10 @@ schema.prisma を変えたときの手順は、[docs/setup.md の「スキーマ
 <p align="right">(<a href="#readme-top">先頭へ戻る</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
-[issues-shield]: https://img.shields.io/github/issues/Riri-Inferno/self-introduce.svg?style=for-the-badge
-[issues-url]: https://github.com/Riri-Inferno/self-introduce/issues
-[license-shield]: https://img.shields.io/github/license/Riri-Inferno/self-introduce.svg?style=for-the-badge
-[license-url]: https://github.com/Riri-Inferno/self-introduce/blob/main/LICENSE
+[issues-shield]: https://img.shields.io/github/issues/Riri-Inferno/self-introduction-brog.svg?style=for-the-badge
+[issues-url]: https://github.com/Riri-Inferno/self-introduction-brog/issues
+[license-shield]: https://img.shields.io/github/license/Riri-Inferno/self-introduction-brog.svg?style=for-the-badge
+[license-url]: https://github.com/Riri-Inferno/self-introduction-brog/blob/main/LICENSE
 [React-shield]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [React-url]: https://react.dev/
 [TypeScript-shield]: https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white
