@@ -28,3 +28,6 @@ Thumbs.db
 
 # ローカル
 .local/
+
+# ローカル開発用の画像置き場(docs/adr/0011)
+backend/.storage/
