@@ -1,0 +1,521 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===============================================================
+// 設計ルール
+//  - 言語依存のテキストは <Model>Translation に分離する(翻訳テーブル方式)
+//    locale は Enum にせず文字列('ja' | 'en')。値は Zod で検証する
+//    (Enum だと言語追加のたびにマイグレーションが要るため)
+//  - カテゴリ類は Enum にせずテーブルにする(編集画面から増減できるように)
+//  - 多対多は暗黙ではなく明示的な中間テーブルにする(後から sortOrder 等を足せる)
+//  - isPublished = false は下書き。公開用 API(/api/public)では除外する
+//    Skill は持たず、登録済みのものは常に公開する(スキル一覧には全件出る)
+//    案件・個人開発に付く技術タグは、その案件・個人開発が公開なら表示される
+//  - 親子関係のあるモデルは、親も公開のときだけ子を公開扱いにする
+//    (例: Career が非公開なら、配下の Assignment が公開でも出さない)
+//    公開用 API のクエリでは親の isPublished も条件に入れる
+//  - 見た目(レイアウト・色など)の制御はデータに持たせない。フロントで決める
+//  - sortOrder は小さい順。編集画面から並べ替える
+//  - 年月だけの日付も Date で持ち、日は 1 日で保存する(例: 2023年4月 → 2023-04-01)
+//    表示側で yyyy/MM に整形する
+//  - 日時(createdAt / updatedAt)は timestamptz。DB 内は UTC、API は ISO 8601(Z)で返し、
+//    JST への変換は表示側で行う
+//  - Prisma はモデルの継承ができないので id / createdAt / updatedAt は各モデルに書く
+//  - 親の updatedAt は「その項目の最終更新日時」として扱う
+//    @updatedAt は自分の行が更新されたときしか変わらないので、翻訳や中間テーブルだけを
+//    更新するときも、同じトランザクションで親に updatedAt: new Date() を明示して更新する
+//  - /// は生成される型の説明にも引き継がれる。// は引き継がれない
+// ===============================================================
+
+// ---------------------------------------------------------------
+// プロフィール
+// ---------------------------------------------------------------
+
+/// プロフィール
+/// id は常に 1 で upsert する
+model Profile {
+  /// ID。常に 1 固定
+  id        Int      @id @default(1)
+  /// アイコン画像。ストレージ上のオブジェクトキーを持ち、URL は API で組み立てる
+  avatarKey String?
+  /// 作成日時
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 言語ごとのテキスト
+  translations ProfileTranslation[]
+}
+
+/// プロフィールの翻訳
+/// 言語ごとに1行。主キーは (profileId, locale)。
+model ProfileTranslation {
+  /// 紐づくプロフィールID
+  profileId Int
+  /// 言語コード('ja' | 'en')。Enum にせず Zod で検証する
+  locale    String   @db.VarChar(8)
+  /// 氏名
+  name      String
+  /// 氏名の読み仮名。NULL の場合は表示しない
+  nameKana  String?
+  /// 肩書き(例: クラウドエンジニア)
+  title     String?
+  /// 職務要約
+  summary   String?
+  /// 自己PR(Markdown)。見出し付きで複数項目を書ける
+  selfPr    String?
+  /// 作成日時
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 紐づくプロフィール
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, locale])
+}
+
+// ---------------------------------------------------------------
+// スキル / 使用技術(経歴・個人開発の両方から参照される)
+// ---------------------------------------------------------------
+
+/// スキルカテゴリ
+/// OS / クラウド / IaC など。Enum ではなくテーブルにして、編集画面から増減できるようにする。
+model SkillCategory {
+  /// カテゴリID
+  id        Int      @id @default(autoincrement())
+  /// 表示順。小さい順
+  sortOrder Int      @default(0)
+  /// 作成日時
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 言語ごとのカテゴリ名
+  translations SkillCategoryTranslation[]
+  /// このカテゴリに属するスキル
+  skills       Skill[]
+}
+
+/// スキルカテゴリの翻訳
+model SkillCategoryTranslation {
+  /// 紐づくカテゴリID
+  categoryId Int
+  /// 言語コード('ja' | 'en')
+  locale     String   @db.VarChar(8)
+  /// カテゴリ名(例: クラウド / Cloud)
+  name       String
+  /// 作成日時
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 紐づくカテゴリ
+  category SkillCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, locale])
+}
+
+/// スキル・使用技術
+/// 技術名のマスタ。案件(Assignment)と個人開発(Project)の両方から参照される。
+/// 技術名は固有名詞なので翻訳しない。
+model Skill {
+  /// スキルID
+  id         Int      @id @default(autoincrement())
+  /// 所属カテゴリID
+  categoryId Int
+  /// 技術名(例: TypeScript)。重複不可
+  name       String   @unique
+  /// 表示順。小さい順
+  sortOrder  Int      @default(0)
+  /// 主要スキルか。見せ方(一覧に出す等)はフロントで決める
+  isFeatured Boolean  @default(false)
+  /// 作成日時
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 所属カテゴリ。使用中のカテゴリは削除できない
+  category    SkillCategory     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  /// このスキルを使った案件
+  assignments AssignmentSkill[]
+  /// このスキルを使った個人開発
+  projects    ProjectSkill[]
+
+  @@index([categoryId])
+}
+
+// ---------------------------------------------------------------
+// 職務経歴: Career(勤務先) 1 - N Assignment(案件)
+// ---------------------------------------------------------------
+
+/// 職務経歴(勤務先)
+/// 1社につき1行。配下に案件(Assignment)が複数ぶら下がる。
+model Career {
+  /// 経歴ID
+  id          Int       @id @default(autoincrement())
+  /// 勤務先の URL
+  url         String?
+  /// 在籍開始日。年月だけでも日付で持つ
+  startedAt   DateTime  @db.Date
+  /// 在籍終了日。NULL の場合は現在も在籍
+  endedAt     DateTime? @db.Date
+  /// 表示順。小さい順
+  sortOrder   Int       @default(0)
+  /// 公開フラグ。false は下書きで、公開用 API には出ない
+  isPublished Boolean   @default(false)
+  /// 作成日時
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  /// 言語ごとのテキスト
+  translations CareerTranslation[]
+  /// この勤務先での案件
+  assignments  Assignment[]
+}
+
+/// 職務経歴の翻訳
+model CareerTranslation {
+  /// 紐づく経歴ID
+  careerId    Int
+  /// 言語コード('ja' | 'en')
+  locale      String   @db.VarChar(8)
+  /// 会社名
+  company     String
+  /// 会社・事業の概要
+  description String?
+  /// 作成日時
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 紐づく経歴
+  career Career @relation(fields: [careerId], references: [id], onDelete: Cascade)
+
+  @@id([careerId, locale])
+}
+
+/// 案件
+/// 勤務先ごとのプロジェクト。期間が重なっていてもよい(複数案件の並行)。
+model Assignment {
+  /// 案件ID
+  id          Int       @id @default(autoincrement())
+  /// 所属する経歴(勤務先)ID
+  careerId    Int
+  /// 案件の開始日
+  startedAt   DateTime  @db.Date
+  /// 案件の終了日。NULL の場合は現在も継続中
+  endedAt     DateTime? @db.Date
+  /// 表示順。小さい順
+  sortOrder   Int       @default(0)
+  /// 公開フラグ。false は下書きで、公開用 API には出ない
+  isPublished Boolean   @default(false)
+  /// 作成日時
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  /// 所属する経歴。経歴を消すと案件も消える
+  career       Career                  @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  /// 言語ごとのテキスト
+  translations AssignmentTranslation[]
+  /// 使用技術
+  skills       AssignmentSkill[]
+
+  @@index([careerId])
+}
+
+/// 案件の翻訳
+model AssignmentTranslation {
+  /// 紐づく案件ID
+  assignmentId Int
+  /// 言語コード('ja' | 'en')
+  locale       String   @db.VarChar(8)
+  /// 案件名
+  title        String
+  /// 役割(例: リーダー)。人数などは本文に書く
+  role         String?
+  /// プロジェクト内容(Markdown)
+  description  String?
+  /// 担当業務(Markdown)
+  duties       String?
+  /// 実績・取り組み(Markdown)
+  achievements String?
+  /// 作成日時
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 紐づく案件
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@id([assignmentId, locale])
+}
+
+/// 案件と使用技術の中間テーブル
+/// 暗黙の多対多にせず明示的に持つ。後から項目を足せるようにするため。
+model AssignmentSkill {
+  /// 紐づく案件ID
+  assignmentId Int
+  /// 紐づくスキルID
+  skillId      Int
+  /// その案件内での表示順。小さい順
+  sortOrder    Int @default(0)
+
+  /// 紐づく案件
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  /// 紐づくスキル。使用中のスキルは削除できない
+  skill      Skill      @relation(fields: [skillId], references: [id], onDelete: Restrict)
+
+  @@id([assignmentId, skillId])
+  @@index([skillId])
+}
+
+// ---------------------------------------------------------------
+// 個人開発
+// ---------------------------------------------------------------
+
+/// 個人開発
+/// 業務外の技術活動やポートフォリオ。
+model Project {
+  /// 個人開発ID
+  id          Int       @id @default(autoincrement())
+  /// 個別ページの URL に使う識別子(例: gcp-serverless-vector-search)。重複不可
+  slug        String    @unique
+  /// 公開している場合のサイト URL
+  url         String?
+  /// ソースコードのリポジトリ URL
+  repoUrl     String?
+  /// 一覧用の画像。ストレージ上のオブジェクトキーを持ち、URL は API で組み立てる
+  imageKey    String?
+  /// 開発開始日。NULL の場合は不明
+  startedAt   DateTime? @db.Date
+  /// 開発終了日。NULL の場合は継続中
+  endedAt     DateTime? @db.Date
+  /// 表示順。小さい順
+  sortOrder   Int       @default(0)
+  /// 公開フラグ。false は下書きで、公開用 API には出ない
+  isPublished Boolean   @default(false)
+  /// 作成日時
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  /// 言語ごとのテキスト
+  translations ProjectTranslation[]
+  /// 使用技術
+  skills       ProjectSkill[]
+}
+
+/// 個人開発の翻訳
+model ProjectTranslation {
+  /// 紐づく個人開発ID
+  projectId   Int
+  /// 言語コード('ja' | 'en')
+  locale      String   @db.VarChar(8)
+  /// 名称
+  title       String
+  /// 一覧用の短い説明
+  summary     String?
+  /// 詳細(Markdown)
+  description String?
+  /// 作成日時
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 紐づく個人開発
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, locale])
+}
+
+/// 個人開発と使用技術の中間テーブル
+model ProjectSkill {
+  /// 紐づく個人開発ID
+  projectId Int
+  /// 紐づくスキルID
+  skillId   Int
+  /// その個人開発内での表示順。小さい順
+  sortOrder Int @default(0)
+
+  /// 紐づく個人開発
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// 紐づくスキル。使用中のスキルは削除できない
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Restrict)
+
+  @@id([projectId, skillId])
+  @@index([skillId])
+}
+
+// ---------------------------------------------------------------
+// 学歴・資格
+// ---------------------------------------------------------------
+
+/// 学歴
+model Education {
+  /// 学歴ID
+  id          Int       @id @default(autoincrement())
+  /// 入学日
+  startedAt   DateTime  @db.Date
+  /// 卒業(修了)・退学日。NULL の場合は在学中
+  endedAt     DateTime? @db.Date
+  /// 表示順。小さい順
+  sortOrder   Int       @default(0)
+  /// 公開フラグ。false は下書きで、公開用 API には出ない
+  isPublished Boolean   @default(false)
+  /// 作成日時
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  /// 言語ごとのテキスト
+  translations EducationTranslation[]
+}
+
+/// 学歴の翻訳
+model EducationTranslation {
+  /// 紐づく学歴ID
+  educationId Int
+  /// 言語コード('ja' | 'en')
+  locale      String   @db.VarChar(8)
+  /// 学校名
+  school      String
+  /// 学部・学科
+  faculty     String?
+  /// 在籍状況の表示文言(例: 卒業 / 中途退学)。NULL の場合は表示しない
+  status      String?
+  /// 作成日時
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 紐づく学歴
+  education Education @relation(fields: [educationId], references: [id], onDelete: Cascade)
+
+  @@id([educationId, locale])
+}
+
+/// 資格
+model Certification {
+  /// 資格ID
+  id          Int       @id @default(autoincrement())
+  /// 取得日。NULL の場合は不明
+  acquiredAt  DateTime? @db.Date
+  /// 有効期限。NULL の場合は期限なし
+  expiresAt   DateTime? @db.Date
+  /// 認定バッジなどの確認用 URL
+  url         String?
+  /// 表示順。小さい順
+  sortOrder   Int       @default(0)
+  /// 公開フラグ。false は下書きで、公開用 API には出ない
+  isPublished Boolean   @default(false)
+  /// 作成日時
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  /// 言語ごとのテキスト
+  translations CertificationTranslation[]
+}
+
+/// 資格の翻訳
+model CertificationTranslation {
+  /// 紐づく資格ID
+  certificationId Int
+  /// 言語コード('ja' | 'en')
+  locale          String   @db.VarChar(8)
+  /// 資格名
+  name            String
+  /// 発行元(例: AWS)
+  issuer          String?
+  /// 作成日時
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 紐づく資格
+  certification Certification @relation(fields: [certificationId], references: [id], onDelete: Cascade)
+
+  @@id([certificationId, locale])
+}
+
+// ---------------------------------------------------------------
+// 外部リンク
+// ---------------------------------------------------------------
+
+/// 外部リンク
+/// GitHub や DevIO など。固有名詞なので翻訳しない。
+/// サービス(アイコン・表示名)は URL のホストから判定する。
+/// 対応していないホストの URL は Zod で弾き、登録できないようにする。
+model SocialLink {
+  /// リンクID
+  id          Int      @id @default(autoincrement())
+  /// リンク先 URL。対応サービスのホストのみ(例: https://github.com/<user>)
+  url         String
+  /// 表示順。小さい順
+  sortOrder   Int      @default(0)
+  /// 公開フラグ。false は下書きで、公開用 API には出ない
+  isPublished Boolean  @default(false)
+  /// 作成日時
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+}
+
+// ---------------------------------------------------------------
+// ブログ記事
+// ---------------------------------------------------------------
+
+/// ブログ記事
+/// 近況や技術メモなど。新しい順に並べるので sortOrder は持たない。
+model Post {
+  /// 記事ID
+  id          Int       @id @default(autoincrement())
+  /// 個別ページの URL に使う識別子。重複不可
+  slug        String    @unique
+  /// 公開日時。一覧の並び順に使う。下書きの間は NULL でよい
+  publishedAt DateTime? @db.Timestamptz(3)
+  /// 公開フラグ。false は下書きで、公開用 API には出ない
+  isPublished Boolean   @default(false)
+  /// 作成日時
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  /// 言語ごとのテキスト
+  translations PostTranslation[]
+
+  @@index([isPublished, publishedAt])
+}
+
+/// ブログ記事の翻訳
+/// 英訳しない記事は ja の行だけでよい
+model PostTranslation {
+  /// 紐づく記事ID
+  postId    Int
+  /// 言語コード('ja' | 'en')
+  locale    String   @db.VarChar(8)
+  /// タイトル
+  title     String
+  /// 一覧用の短い説明
+  summary   String?
+  /// 本文(Markdown)
+  body      String
+  /// 作成日時
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  /// 更新日時
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  /// 紐づく記事
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, locale])
+}
