@@ -1,0 +1,5 @@
+{
+  // ビルド用。テストは dist に含めない
+  "extends": "./tsconfig.json",
+  "exclude": ["src/**/*.test.ts", "src/test"]
+}
