@@ -29,6 +29,11 @@ Status ごとに表を分けている。Status が変わったら、行を該当
 | 番号 | タイトル |
 |------|----------|
 | [0012](0012-api-structure-and-admin-protection.md) | API は用途ごとにパスを分け、管理用 API はインフラとアプリの両方で保護する |
+| [0013](0013-backend-layered-architecture.md) | バックエンドはクリーンアーキテクチャに沿って層を分け、依存は外から渡す |
+| [0014](0014-zod-schema-as-api-contract.md) | API の入出力は Zod のスキーマで1回だけ定義し、検証・型・OpenAPI に使い回す |
+| [0015](0015-response-envelope.md) | レスポンスの本文は、成功時は data、失敗時は error で包む形に統一する |
+| [0016](0016-env-config-validation.md) | 環境変数は起動時に Zod で検証し、任意の項目は未設定なら初期値を使う |
+| [0017](0017-testing-strategy.md) | テストは Vitest で、DB を使わないテストと、テスト用 DB を使う統合テストに分ける |
 
 ### Accepted(採用)
 
