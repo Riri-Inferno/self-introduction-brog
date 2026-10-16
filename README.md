@@ -214,14 +214,16 @@ schema.prisma を変えたときの手順は、[docs/setup.md の「スキーマ
 - [x] データモデルの設計(ADR 0001〜0011)
 - [x] DB のマイグレーション(CHECK 制約を含む)
 - [x] API の土台(層の分け方、レスポンスの形、設定、テスト。ADR 0013〜0017)
-- [ ] API の実装
-    - [ ] 閲覧用 API(`/api/public/*`)。プロフィールまで実装済み
-    - [ ] 管理用 API(`/api/admin/*`)
+- [ ] 閲覧画面を通しで動かす(DB → API → React)
+    - [x] 閲覧用 API: プロフィール(`GET /api/public/profile`)
+    - [ ] 閲覧用 API: スキル(`GET /api/public/skills`)
+    - [ ] フロントエンドの土台と、プロフィール・スキルの閲覧画面
+- [ ] 残りの閲覧用 API と閲覧画面(経歴、個人開発、学歴、資格、外部リンク、記事)
 - [ ] seed(初期データの投入)
-- [ ] フロントエンドの実装
-    - [ ] 閲覧画面
-    - [ ] 編集画面
+- [ ] 管理用 API(`/api/admin/*`)と編集画面
 - [ ] インフラの認証と、管理用 API の JWT 検証(ADR 0012)
+
+1つ目の項目のあとの進め方は、閲覧画面が通しで動いてから決めます。
 
 未実装の機能と既知の問題は、[Issues](https://github.com/Riri-Inferno/self-introduction-brog/issues) にまとめます。
 
