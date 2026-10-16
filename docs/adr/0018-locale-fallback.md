@@ -1,7 +1,7 @@
 # ADR 0018: 閲覧用 API は ?locale で言語を受け取り、翻訳がなければ ja で返す
 
 - **Date**: 2026-10-16
-- **Status**: Proposed
+- **Status**: Accepted
 - **Supplements**: [0002](0002-translation-tables.md)
 
 ## Context
