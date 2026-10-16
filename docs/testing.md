@@ -16,7 +16,7 @@
 |------|------|----|-----------|------|
 | ユニットテスト | domain、application | 使わない | `*.test.ts` | `src/application/profile/get-public-profile.test.ts` |
 | API テスト | presentation(ルート) | 使わない | `*.test.ts` | `src/presentation/routes/public/profile.test.ts` |
-| 統合テスト | infrastructure(Prisma の実装)、DB の制約 | テスト用 DB | `*.int.test.ts` | `src/infrastructure/prisma/public-profile-query.int.test.ts` |
+| 統合テスト | infrastructure(Prisma の実装)、DB の制約 | テスト用 DB | `*.int.test.ts` | `src/infrastructure/prisma/prisma-public-profile-query.int.test.ts` |
 
 - テストのファイルは、テストする対象のファイルの隣に置きます
 - ファイル名の末尾で種類が決まります。`*.int.test.ts` は統合テスト、それ以外の `*.test.ts` は DB を使わないテストです(`vitest.config.ts` で分けています)
@@ -156,7 +156,7 @@ describe('GET /api/public/profile', () => {
 ```ts
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { createTestPrisma, resetDatabase } from '../../test/integration/db.js'
-import { createPrismaPublicProfileQuery } from './public-profile-query.js'
+import { createPrismaPublicProfileQuery } from './prisma-public-profile-query.js'
 
 const prisma = createTestPrisma()
 const query = createPrismaPublicProfileQuery(prisma)

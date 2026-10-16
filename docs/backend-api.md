@@ -40,7 +40,7 @@ HTTP リクエスト
 | domain | `src/domain/errors.ts` | `NotFoundError` などの業務上のエラー |
 | application | `src/application/profile/public-profile-query.ts` | 読み取り用のインターフェースと、返すデータの型 |
 | application | `src/application/profile/get-public-profile.ts` | ユースケース |
-| infrastructure | `src/infrastructure/prisma/public-profile-query.ts` | インターフェースの Prisma での実装 |
+| infrastructure | `src/infrastructure/prisma/prisma-public-profile-query.ts` | インターフェースの Prisma での実装 |
 | presentation | `src/presentation/routes/public/profile.ts` | レスポンスのスキーマとルート |
 | presentation | `src/presentation/routes/public/index.ts` | `/api/public` 以下のルートをまとめて登録する |
 | 組み立て | `src/main.ts` | 実装を作り、ユースケースに渡す |
@@ -60,7 +60,7 @@ HTTP リクエスト
 
 ### 1. 読み取り用のインターフェースを定義する
 
-`src/application/<名前>/public-<名前>-query.ts` を作ります。見本は `public-profile-query.ts` です。
+`src/application/<名前>/public-<名前>-query.ts` を作ります。見本は `src/application/profile/public-profile-query.ts` です。
 
 ```ts
 import type { Locale } from '../../domain/locale.js'
@@ -81,7 +81,7 @@ export interface Public<Name>Query {
 
 ### 2. ユースケースを作る
 
-`src/application/<名前>/get-public-<名前>.ts` を作ります。見本は `get-public-profile.ts` です。
+`src/application/<名前>/get-public-<名前>.ts` を作ります。見本は `src/application/profile/get-public-profile.ts` です。
 
 ```ts
 export interface Public<Name> {
@@ -106,7 +106,9 @@ export function createGetPublic<Name>(deps: {
 
 ### 3. Prisma で実装する
 
-`src/infrastructure/prisma/public-<名前>-query.ts` を作ります。見本は `public-profile-query.ts` です。
+`src/infrastructure/prisma/prisma-public-<名前>-query.ts` を作ります。見本は `src/infrastructure/prisma/prisma-public-profile-query.ts` です。
+
+ファイル名は `prisma-` で始めます。手順 1 のインターフェースと同じ名前にすると、検索や Ctrl+P で取り違えるためです。中の関数名(`createPrismaPublic<Name>Query`)ともそろいます。
 
 ```ts
 export function createPrismaPublic<Name>Query(prisma: PrismaClient): Public<Name>Query {
@@ -132,7 +134,7 @@ export function createPrismaPublic<Name>Query(prisma: PrismaClient): Public<Name
 
 ### 4. ルートを作る
 
-`src/presentation/routes/public/<名前>.ts` を作ります。見本は `profile.ts` です。
+`src/presentation/routes/public/<名前>.ts` を作ります。見本は `src/presentation/routes/public/profile.ts` です。
 
 ```ts
 const public<Name>Schema = z
