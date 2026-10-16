@@ -29,6 +29,7 @@ Status ごとに表を分けている。Status が変わったら、行を該当
 | 番号 | タイトル |
 |------|----------|
 | [0012](0012-api-structure-and-admin-protection.md) | API は用途ごとにパスを分け、管理用 API はインフラとアプリの両方で保護する |
+| [0018](0018-locale-fallback.md) | 閲覧用 API は ?locale で言語を受け取り、翻訳がなければ ja で返す (0002 補足) |
 
 ### Accepted(採用)
 

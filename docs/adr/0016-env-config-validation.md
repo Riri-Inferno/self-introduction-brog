@@ -41,6 +41,9 @@
 | `PORT` | 任意 | `3000` | 待ち受けるポート |
 | `LOG_LEVEL` | 任意 | `info` | ログの出力レベル |
 | `STORAGE_DIR` | 任意 | `.storage` | ローカルの画像の置き場所([0011](0011-local-image-storage.md)) |
+| `STORAGE_BASE_URL` | 任意 | `http://localhost:<PORT>/storage` | 画像の URL の先頭部分([0008](0008-image-object-key.md)) |
+
+統合テストが使う `TEST_DATABASE_URL` は、テストのコードだけが読む。`loadConfig` では扱わない([0017](0017-testing-strategy.md))。
 
 管理用 API の JWT 検証に使う項目は、認証プロキシのサービスを決めたときに足す([0012](0012-api-structure-and-admin-protection.md))。
 
