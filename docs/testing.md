@@ -5,6 +5,7 @@
 - [テストの種類](#テストの種類)
 - [準備](#準備)
 - [実行する](#実行する)
+- [テストの書き方の決まり](#テストの書き方の決まり)
 - [ユニットテストを書く](#ユニットテストを書く)
 - [API テストを書く](#api-テストを書く)
 - [統合テストを書く](#統合テストを書く)
@@ -70,11 +71,68 @@ npx vitest run src/application/profile/get-public-profile.test.ts
 
 # テスト名で絞り込む(名前の一部でよい)
 npx vitest run --project unit -t "英訳がなければ"
+
+# 異常系のテストだけを実行する
+npx vitest run --project unit -t "異常系"
 ```
 
 すべて通ると、最後に `Test Files  N passed` と表示されます。失敗したテストは `FAIL` と、期待した値と実際の値の差が表示されます。
 
+## テストの書き方の決まり
+
+どの種類のテストも、次の2つの決まりで書きます。
+
+### テスト名の頭に、正常系か異常系かを書く
+
+```ts
+it('[正常系] 英訳がなければ日本語を返す', ...)
+it('[異常系] プロフィールがなければ NotFoundError を投げる', ...)
+```
+
+| 区分 | 対象 |
+|------|------|
+| `[正常系]` | 想定どおりの入力で、期待した結果が返る場合 |
+| `[異常系]` | 不正な入力、データがない、エラーが起きる場合 |
+
+テストの一覧で、異常系のテストが足りているかを見分けられます。
+
+### Arrange / Act / Assert の3つに分けて書く
+
+各テストを、コメントで3つに分けます。
+
+| 区分 | 書くこと |
+|------|----------|
+| `// Arrange` | 準備。フェイクやテストデータを作る |
+| `// Act` | 実行。テストする関数や API を1回だけ呼ぶ |
+| `// Assert` | 確認。結果が期待どおりかを `expect` で確かめる |
+
+準備が要らないときも、`// Arrange` は省かず、理由をコメントで書きます(例: `// DB は beforeEach で空にしてある`)。
+
+エラーを確かめるときは、Act で `await` を付けずに結果を変数に入れ、Assert で `rejects` に渡します。Act で `await` すると、そこでエラーが投げられてテストが落ちます。
+
+```ts
+// Act
+const result = getPublicProfile({ locale: 'ja' })
+
+// Assert
+await expect(result).rejects.toThrow(NotFoundError)
+```
+
+同期の関数のエラーは、呼び出しを関数で包んで Act に置きます。
+
+```ts
+// Act
+const act = () => loadConfig({})
+
+// Assert
+expect(act).toThrow(ConfigError)
+```
+
 ## ユニットテストを書く
+
+`src/application/<名前>/get-public-<名前>.test.ts` を作ります。見本は `src/application/profile/get-public-profile.test.ts` です。
+
+domain 層の関数のテストも同じ書き方です。見本は `src/domain/translation.test.ts` です。
 
 ユースケースには、DB を使わないフェイクの実装を渡します。フェイクは、インターフェースを満たすオブジェクトをテストの中で作るだけです。モックのライブラリは使いません。
 
@@ -92,13 +150,18 @@ function fakeProfileQuery(record: PublicProfileRecord | null): PublicProfileQuer
 }
 
 describe('getPublicProfile', () => {
-  it('プロフィールがなければ NotFoundError を投げる', async () => {
+  it('[異常系] プロフィールがなければ NotFoundError を投げる', async () => {
+    // Arrange
     const getPublicProfile = createGetPublicProfile({
       profileQuery: fakeProfileQuery(null),
       imageStorage: fakeImageStorage,
     })
 
-    await expect(getPublicProfile({ locale: 'ja' })).rejects.toThrow(NotFoundError)
+    // Act
+    const result = getPublicProfile({ locale: 'ja' })
+
+    // Assert
+    await expect(result).rejects.toThrow(NotFoundError)
   })
 })
 ```
@@ -113,6 +176,8 @@ describe('getPublicProfile', () => {
 
 ## API テストを書く
 
+`src/presentation/routes/public/<名前>.test.ts` を作ります。見本は `src/presentation/routes/public/profile.test.ts` です。
+
 `buildApp` にフェイクのユースケースを渡し、`app.inject()` でリクエストを送ります。サーバーは起動しません。
 
 ```ts
@@ -122,13 +187,16 @@ import { buildApp } from '../../../app.js'
 // 抜粋。profile の定義は見本のファイルを参照
 
 describe('GET /api/public/profile', () => {
-  it('data で包んで返す', async () => {
+  it('[正常系] data で包んで返す', async () => {
+    // Arrange
     const app = await buildApp({
       usecases: { getPublicProfile: async () => profile },
     })
 
+    // Act
     const res = await app.inject({ method: 'GET', url: '/api/public/profile' })
 
+    // Assert
     expect(res.statusCode).toBe(200)
     expect(res.json()).toEqual({ data: { ...profile, updatedAt: '2026-10-01T00:00:00.000Z' } })
   })
@@ -145,6 +213,8 @@ describe('GET /api/public/profile', () => {
 ルートを足すと、`buildApp` に渡すユースケースが増えます。テストでは、使わないユースケースに `async () => Promise.reject(new Error('呼ばれない'))` のようなフェイクを渡します。
 
 ## 統合テストを書く
+
+`src/infrastructure/prisma/prisma-public-<名前>-query.int.test.ts` を作ります。見本は `src/infrastructure/prisma/prisma-public-profile-query.int.test.ts` です。
 
 テスト用 DB に Prisma でデータを入れ、infrastructure の実装を呼びます。`src/test/integration/db.ts` の関数を使います。
 
@@ -171,13 +241,16 @@ afterAll(async () => {
 })
 
 describe('PrismaPublicProfileQuery.find', () => {
-  it('指定した言語の翻訳だけを返す', async () => {
+  it('[正常系] 指定した言語の翻訳だけを返す', async () => {
+    // Arrange
     await prisma.profile.create({
       data: { translations: { create: [{ locale: 'ja', name: '山田 太郎' }] } },
     })
 
+    // Act
     const profile = await query.find(['ja'])
 
+    // Assert
     expect(profile?.translations).toHaveLength(1)
   })
 })
