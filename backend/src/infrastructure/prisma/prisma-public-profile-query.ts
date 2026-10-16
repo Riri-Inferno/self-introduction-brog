@@ -14,6 +14,8 @@ export function createPrismaPublicProfileQuery(prisma: PrismaClient): PublicProf
           avatarKey: true,
           updatedAt: true,
           translations: {
+            // 指定した言語の翻訳だけを取る(SQL の WHERE locale IN (...))
+            // Prisma の in は readonly の配列を受け取れないので、コピーして渡す
             where: { locale: { in: [...locales] } },
             select: {
               locale: true,
