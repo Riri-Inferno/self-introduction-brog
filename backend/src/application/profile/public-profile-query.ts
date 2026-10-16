@@ -1,6 +1,7 @@
 import type { Locale } from '../../domain/locale.js'
 
 // 閲覧用 API の読み取りに使うインターフェース(ADR 0013)
+// プロフィールでしか使わないので、ports/ ではなくこのフォルダに置く
 // 実装は infrastructure/prisma にある。ユースケースのテストではフェイクを渡す
 
 export interface ProfileTextRecord {
