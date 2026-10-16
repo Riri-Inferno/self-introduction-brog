@@ -1,7 +1,7 @@
 # ADR 0015: レスポンスの本文は、成功時は data、失敗時は error で包む形に統一する
 
 - **Date**: 2026-10-15
-- **Status**: Proposed
+- **Status**: Accepted
 
 ## Context
 

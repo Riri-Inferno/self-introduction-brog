@@ -1,7 +1,7 @@
 # ADR 0017: テストは Vitest で、DB を使わないテストと、テスト用 DB を使う統合テストに分ける
 
 - **Date**: 2026-10-15
-- **Status**: Proposed
+- **Status**: Accepted
 
 ## Context
 

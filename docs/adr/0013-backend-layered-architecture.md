@@ -1,7 +1,7 @@
 # ADR 0013: バックエンドはクリーンアーキテクチャに沿って層を分け、依存は外から渡す
 
 - **Date**: 2026-10-15
-- **Status**: Proposed
+- **Status**: Accepted
 
 ## Context
 

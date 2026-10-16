@@ -1,7 +1,7 @@
 # ADR 0014: API の入出力は Zod のスキーマで1回だけ定義し、検証・型・OpenAPI に使い回す
 
 - **Date**: 2026-10-15
-- **Status**: Proposed
+- **Status**: Accepted
 
 ## Context
 

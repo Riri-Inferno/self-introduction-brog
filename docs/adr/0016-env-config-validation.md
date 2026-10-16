@@ -1,7 +1,7 @@
 # ADR 0016: 環境変数は起動時に Zod で検証し、任意の項目は未設定なら初期値を使う
 
 - **Date**: 2026-10-15
-- **Status**: Proposed
+- **Status**: Accepted
 
 ## Context
 
