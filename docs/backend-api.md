@@ -117,7 +117,13 @@ export function createGetPublic<Name>(deps: {
 ```
 
 - 使う相手(クエリ、画像ストレージなど)は `deps` で受け取ります。ファイルの中で実装を import しません
-- データがないときは `throw new NotFoundError('...')` を投げます。HTTP のステータスはここでは決めません
+- データがないときは `NotFoundError` を投げます。HTTP のステータスはここでは決めません
+  ```ts
+  throw new NotFoundError({ resource: 'Post', id: slug })       // 「Post (id: hello) が見つかりません」
+  throw new NotFoundError({ resource: 'Profile', message: 'プロフィールが登録されていません' })
+  ```
+  - `resource` はモデル名にします。`id` は id や slug など、データを特定する値です。1件に決まらないときは省略します
+  - 非公開のデータも `NotFoundError` にします。「ある」と「非公開」で応答を変えると、非公開のデータがあることが外から分かるためです
 - 一覧が0件なのは正常です。空の配列を返します
 
 ### 3. Prisma で実装する

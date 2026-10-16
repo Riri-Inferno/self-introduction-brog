@@ -31,7 +31,7 @@ export function createGetPublicProfile(deps: {
     const profile = await deps.profileQuery.find([locale, DEFAULT_LOCALE])
     const text = profile && selectTranslation(profile.translations, locale)
     if (!profile || !text) {
-      throw new NotFoundError('プロフィールが登録されていません')
+      throw new NotFoundError({ resource: 'Profile', message: 'プロフィールが登録されていません' })
     }
 
     return {

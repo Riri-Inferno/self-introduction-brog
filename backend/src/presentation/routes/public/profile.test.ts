@@ -84,7 +84,7 @@ describe('GET /api/public/profile', () => {
   it('[異常系] プロフィールがなければ 404 NOT_FOUND を返す', async () => {
     // Arrange
     const app = await setup(async () => {
-      throw new NotFoundError('プロフィールが登録されていません')
+      throw new NotFoundError({ resource: 'Profile', message: 'プロフィールが登録されていません' })
     })
 
     // Act
