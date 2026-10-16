@@ -1,3 +1,5 @@
+// Zod のスキーマを置くファイル
+
 import { z } from 'zod'
 import { DEFAULT_LOCALE, LOCALES } from '../../domain/locale.js'
 
