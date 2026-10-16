@@ -18,6 +18,19 @@ export const ERROR_CODES = [
 
 export type ErrorCode = (typeof ERROR_CODES)[number]
 
+/**
+ * code ごとの既定の HTTP ステータス(ADR 0015 の表)。
+ * code を ERROR_CODES に足したら、ここにも足す(足し忘れると型エラーになる)。
+ */
+export const ERROR_STATUS: Record<ErrorCode, number> = {
+  VALIDATION_ERROR: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  INTERNAL_ERROR: 500,
+}
+
 export const errorResponseSchema = z
   .object({
     error: z.object({
