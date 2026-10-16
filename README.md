@@ -21,7 +21,7 @@
   </p>
 </div>
 
-> **状態: 開発中。** DB のスキーマとマイグレーションまでできています。API とフロントエンドは未実装です。「予定」と書いた部分は、未実装です。
+> **状態: 開発中。** DB のスキーマとマイグレーション、API の土台と閲覧用 API の一部(`GET /api/public/profile`)までできています。フロントエンドは未実装です。「予定」と書いた部分は、未実装です。
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -73,11 +73,19 @@ self-introduce/
 ├── backend/             API サーバー(Fastify + Prisma)
 │   ├── prisma/          スキーマ(schema.prisma)とマイグレーション
 │   ├── prisma.config.ts Prisma の設定
-│   └── src/
+│   └── src/             層ごとに分ける(ADR 0013)
+│       ├── domain/          業務のルール。外部ライブラリに依存しない
+│       ├── application/     ユースケースと、外部とのインターフェース
+│       ├── infrastructure/  Prisma、画像ストレージ、設定の読み込み
+│       ├── presentation/    Fastify のルート、Zod のスキーマ、エラーの変換
+│       ├── app.ts           Fastify の組み立て
+│       └── main.ts          起動処理
 ├── frontend/            閲覧画面・編集画面(予定)
 ├── docs/
 │   ├── adr/             設計判断の記録(ADR)
-│   └── setup.md         セットアップの詳しい手順
+│   ├── setup.md         セットアップの詳しい手順
+│   ├── backend-api.md   バックエンド API の実装手順
+│   └── testing.md       テストの実装と実行
 ├── docker-compose.yml   ローカル用の DB
 └── README.md
 ```
@@ -171,10 +179,17 @@ self-introduce/
 <a id="usage"></a>
 ## 使いかた
 
-> 今使えるのは、開発用のコマンドだけです。API サーバーの起動方法は、実装時に書きます。
-
 ```sh
 # 実行場所: self-introduce/backend
+
+# API サーバーを起動する(http://localhost:3000、OpenAPI の画面は /docs)
+npm run dev
+
+# DB を使わないテストを実行する
+npm test
+
+# テスト用 DB を使う統合テストを実行する(準備は docs/setup.md)
+npm run test:integration
 
 # 型チェックをする
 npm run typecheck
@@ -186,6 +201,8 @@ npm run db:generate
 npm run db:migrate
 ```
 
+API を足す手順は [docs/backend-api.md](docs/backend-api.md)、テストの書き方は [docs/testing.md](docs/testing.md) を参照してください。
+
 schema.prisma を変えたときの手順は、[docs/setup.md の「スキーマを変えたとき」](docs/setup.md#スキーマを変えたとき)を参照してください。
 
 <p align="right">(<a href="#readme-top">先頭へ戻る</a>)</p>
@@ -196,8 +213,9 @@ schema.prisma を変えたときの手順は、[docs/setup.md の「スキーマ
 
 - [x] データモデルの設計(ADR 0001〜0011)
 - [x] DB のマイグレーション(CHECK 制約を含む)
+- [x] API の土台(層の分け方、レスポンスの形、設定、テスト。ADR 0013〜0017)
 - [ ] API の実装
-    - [ ] 閲覧用 API(`/api/public/*`)
+    - [ ] 閲覧用 API(`/api/public/*`)。プロフィールまで実装済み
     - [ ] 管理用 API(`/api/admin/*`)
 - [ ] seed(初期データの投入)
 - [ ] フロントエンドの実装
