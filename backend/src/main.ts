@@ -14,9 +14,11 @@
 import 'dotenv/config'
 import { buildApp } from './app.js'
 import { createGetPublicProfile } from './application/profile/get-public-profile.js'
+import { createGetPublicSkills } from './application/skill/get-public-skills.js'
 import { ConfigError, loadConfig, type Config } from './infrastructure/config.js'
 import { createPrismaClient } from './infrastructure/prisma/client.js'
 import { createPrismaPublicProfileQuery } from './infrastructure/prisma/prisma-public-profile-query.js'
+import { createPrismaPublicSkillQuery } from './infrastructure/prisma/prisma-public-skill-query.js'
 import { createLocalImageStorage } from './infrastructure/storage/local-image-storage.js'
 
 // ---------------------------------------------------------------
@@ -58,6 +60,9 @@ const usecases = {
     profileQuery: createPrismaPublicProfileQuery(prisma),
     imageStorage,
   }),
+  getPublicSkills: createGetPublicSkills({
+    skillQuery: createPrismaPublicSkillQuery(prisma),
+  })
 }
 
 // ---------------------------------------------------------------
