@@ -21,7 +21,7 @@
   </p>
 </div>
 
-> **状態: 開発中。** DB のスキーマとマイグレーション、API の土台と閲覧用 API の一部(`GET /api/public/profile`)までできています。フロントエンドは未実装です。「予定」と書いた部分は、未実装です。
+> **状態: 開発中。** DB のスキーマとマイグレーション、API の土台と閲覧用 API の一部(`GET /api/public/profile`、`GET /api/public/skills`)までできています。フロントエンドは未実装です。「予定」と書いた部分は、未実装です。
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -216,7 +216,7 @@ schema.prisma を変えたときの手順は、[docs/setup.md の「スキーマ
 - [x] API の土台(層の分け方、レスポンスの形、設定、テスト。ADR 0013〜0017)
 - [ ] 閲覧画面を通しで動かす(DB → API → React)
     - [x] 閲覧用 API: プロフィール(`GET /api/public/profile`)
-    - [ ] 閲覧用 API: スキル(`GET /api/public/skills`)
+    - [x] 閲覧用 API: スキル(`GET /api/public/skills`)
     - [ ] フロントエンドの土台と、プロフィール・スキルの閲覧画面
 - [ ] 残りの閲覧用 API と閲覧画面(経歴、個人開発、学歴、資格、外部リンク、記事)
 - [ ] seed(初期データの投入)
