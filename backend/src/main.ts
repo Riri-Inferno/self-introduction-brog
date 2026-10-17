@@ -62,7 +62,7 @@ const usecases = {
   }),
   getPublicSkills: createGetPublicSkills({
     skillQuery: createPrismaPublicSkillQuery(prisma),
-  })
+  }),
 }
 
 // ---------------------------------------------------------------

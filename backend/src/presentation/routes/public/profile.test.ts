@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildApp } from '../../../app.js'
 import type { GetPublicProfile, PublicProfile } from '../../../application/profile/get-public-profile.js'
-import type { GetPublicSkills, PublicSkillCategory } from '../../../application/skill/get-public-skills.js'
 import { NotFoundError } from '../../../domain/errors.js'
 import { fakeUsecases } from '../../../test/fake-usecases.js'
 
