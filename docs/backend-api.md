@@ -216,22 +216,24 @@ export function publicRoutes(usecases: PublicUsecases): FastifyPluginAsyncZod {
 }
 ```
 
-ここで型チェックをすると、`main.ts` とテストの `buildApp` の呼び出しで、`getPublic<Name>` がないというエラーが出ます。次の手順で直します。
+ここで型チェックをすると、`main.ts` と `src/test/fake-usecases.ts` で、`getPublic<Name>` がないというエラーが出ます。次の手順で直します。
 
 ### 6. main.ts で組み立てる
 
 `src/main.ts` の `usecases` に足します。
 
 ```ts
-usecases: {
+const usecases = {
   getPublicProfile: createGetPublicProfile({ ... }),
   getPublic<Name>: createGetPublic<Name>({
     <名前>Query: createPrismaPublic<Name>Query(prisma),
   }),
-},
+}
 ```
 
-既存のテストの `buildApp` の呼び出しにも、フェイクのユースケースを足します。
+キーは `PublicUsecases` の項目名(`getPublic<Name>`)にします。`createGetPublic<Name>` は、ユースケースを作る関数の名前です。
+
+テスト用には、`src/test/fake-usecases.ts` の `fakeUsecases` に1行足します。中身は「呼ばれたら失敗する」フェイクです。詳しくは [testing.md](testing.md) の「ユースケースを足したとき」を参照してください。
 
 ### 7. 型チェックとテスト
 
@@ -296,4 +298,6 @@ http://localhost:3000/docs を開き、新しい API が `public` タグの下�
 
 ### 型チェックで `getPublic<Name>` がないと出る
 
-手順 6 のとおり、`main.ts` とテストの `buildApp` の呼び出しにユースケースを足してください。
+手順 6 のとおり、`main.ts` と `src/test/fake-usecases.ts` にユースケースを足してください。
+
+`main.ts` で `getPublic<Name>` がないと出るのに、自分では足したつもりのときは、キーの名前を確かめてください。`createGetPublic<Name>: ...` のように、作る関数の名前をキーにしていることがあります。

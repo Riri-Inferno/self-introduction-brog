@@ -180,9 +180,12 @@ describe('getPublicProfile', () => {
 
 `buildApp` にフェイクのユースケースを渡し、`app.inject()` でリクエストを送ります。サーバーは起動しません。
 
+ユースケースは `src/test/fake-usecases.ts` の `fakeUsecases` で作ります。テストで使うものだけを引数で差し替えます。差し替えなかったユースケースは、呼ばれるとエラーを投げてテストを失敗させます。
+
 ```ts
 import { describe, expect, it } from 'vitest'
 import { buildApp } from '../../../app.js'
+import { fakeUsecases } from '../../../test/fake-usecases.js'
 
 // 抜粋。profile の定義は見本のファイルを参照
 
@@ -190,7 +193,7 @@ describe('GET /api/public/profile', () => {
   it('[正常系] data で包んで返す', async () => {
     // Arrange
     const app = await buildApp({
-      usecases: { getPublicProfile: async () => profile },
+      usecases: fakeUsecases({ getPublicProfile: async () => profile }),
     })
 
     // Act
@@ -210,7 +213,24 @@ describe('GET /api/public/profile', () => {
 - ユースケースが `NotFoundError` を投げたとき、404 の `NOT_FOUND` を返すこと(使う API なら)
 - スキーマにない項目(`isPublished`、画像のキーなど)がレスポンスに出ないこと
 
-ルートを足すと、`buildApp` に渡すユースケースが増えます。テストでは、使わないユースケースに `async () => Promise.reject(new Error('呼ばれない'))` のようなフェイクを渡します。
+### ユースケースを足したとき
+
+`PublicUsecases` にユースケースを足したら、`src/test/fake-usecases.ts` にも1行足します。足し忘れると型エラーになります。
+
+```ts
+export function fakeUsecases(overrides: Partial<PublicUsecases> = {}): PublicUsecases {
+  return {
+    getPublicProfile: notCalled,
+    getPublicSkills: notCalled,
+    getPublic<Name>: notCalled,   // 追加
+    ...overrides,
+  }
+}
+```
+
+直すのはこのファイルだけです。ほかの API のテストは `fakeUsecases` を使っているので、直さなくてかまいません。
+
+使わないユースケースに、`async () => []` のような普通の値を返すフェイクは渡しません。間違って呼ばれてもテストが通ってしまい、気づけないからです。
 
 ## 統合テストを書く
 
