@@ -22,11 +22,11 @@ describe('PrismaPublicSkillQuery.findAll', () => {
     await prisma.skillCategory.create({
       data: {
         sortOrder: 1,
-        translations: { 
+        translations: {
           create: [
             { locale: 'ja', name: 'クラウド' },
             { locale: 'en', name: 'Cloud' },
-          ] 
+          ]
         },
         skills: { create: [{ name: 'EC2', sortOrder: 1 }, { name: 'EKS', sortOrder: 2 }] },
       },
@@ -71,7 +71,7 @@ describe('PrismaPublicSkillQuery.findAll', () => {
     const categories = await query.findAll(['ja'])
 
     // Assert
-    // sortOrder の順に A → B、A の中のスキルは A1 → A2 に並ぶこと
+    // sortOrder の順に A → B、B の中のスキルは B1 → B2に並ぶこと
     expect(categories.map((c) => c.translations[0].name)).toEqual(['カテゴリA', 'カテゴリB'])
     expect(categories[1].skills.map((s) => s.name)).toEqual(['SkillB1', 'SkillB2'])
   })
