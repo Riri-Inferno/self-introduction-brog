@@ -6,6 +6,8 @@ import { localeQuerySchema } from '../../schemas/common.js'
 import { dataResponse, errorResponseSchema } from '../../schemas/response.js'
 
 // GET /api/public/skills
+// このスキーマから、リクエストの検証、型、OpenAPI が作られる(ADR 0014)
+// スキーマにないフィールドはレスポンスに出ない
 
 const publicSkillSchema = z.object({
   id: z.number(),
