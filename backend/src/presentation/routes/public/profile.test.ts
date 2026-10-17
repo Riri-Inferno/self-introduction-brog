@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { buildApp } from '../../../app.js'
 import type { GetPublicProfile, PublicProfile } from '../../../application/profile/get-public-profile.js'
+import type { GetPublicSkills, PublicSkillCategory } from '../../../application/skill/get-public-skills.js'
 import { NotFoundError } from '../../../domain/errors.js'
+import { fakeUsecases } from '../../../test/fake-usecases.js'
 
 // buildApp にフェイクのユースケースを渡し、app.inject() でリクエストを送る(ADR 0017)
 // サーバーは起動せず、DB も使わない
@@ -19,7 +21,7 @@ const profile: PublicProfile = {
 }
 
 function setup(getPublicProfile: GetPublicProfile) {
-  return buildApp({ usecases: { getPublicProfile } })
+  return buildApp({ usecases: fakeUsecases({ getPublicProfile }) })
 }
 
 describe('GET /api/public/profile', () => {

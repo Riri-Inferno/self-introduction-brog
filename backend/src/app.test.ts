@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildApp } from './app.js'
+import { fakeUsecases } from './test/fake-usecases.js'
 
 // OpenAPI が Zod のスキーマから作られることを確かめる(ADR 0014)
 // @fastify/swagger の読み込みに時間がかかるので、タイムアウトを長くしている
@@ -8,10 +9,7 @@ import { buildApp } from './app.js'
 describe('OpenAPI', () => {
   it('[正常系] ルートとスキーマが /docs/json に出る', { timeout: 30_000 }, async () => {
     // Arrange
-    const app = await buildApp({
-      docs: true,
-      usecases: { getPublicProfile: async () => Promise.reject(new Error('呼ばれない')) },
-    })
+    const app = await buildApp({ docs: true, usecases: fakeUsecases() })
 
     // Act
     const res = await app.inject({ method: 'GET', url: '/docs/json' })
