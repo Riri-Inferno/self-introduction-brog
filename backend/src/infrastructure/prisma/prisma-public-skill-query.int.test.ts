@@ -49,8 +49,8 @@ describe('PrismaPublicSkillQuery.findAll', () => {
         translations: { create: [{ locale: 'ja', name: 'カテゴリB' }] },
         skills: {
           create: [
-            { name: 'SkillA2', sortOrder: 2 },  // 先に登録するが、後に並ぶはず
-            { name: 'SkillA1', sortOrder: 1 },
+            { name: 'SkillB2', sortOrder: 2 },  // 先に登録するが、後に並ぶはず
+            { name: 'SkillB1', sortOrder: 1 },
           ],
         },
       },
@@ -59,7 +59,11 @@ describe('PrismaPublicSkillQuery.findAll', () => {
       data: {
         sortOrder: 1,
         translations: { create: [{ locale: 'ja', name: 'カテゴリA' }] },
-        skills: { create: [{ name: 'SkillA', sortOrder: 1 }] },
+        skills: {
+          create: [
+            { name: 'SkillA', sortOrder: 1 }
+          ]
+        },
       },
     })
 
@@ -69,7 +73,7 @@ describe('PrismaPublicSkillQuery.findAll', () => {
     // Assert
     // sortOrder の順に A → B、A の中のスキルは A1 → A2 に並ぶこと
     expect(categories.map((c) => c.translations[0].name)).toEqual(['カテゴリA', 'カテゴリB'])
-    expect(categories[0].skills.map((s) => s.name)).toEqual(['SkillA1', 'SkillA2'])
+    expect(categories[1].skills.map((s) => s.name)).toEqual(['SkillB1', 'SkillB2'])
   })
 
   it('[正常系] 1 件もなければ空の配列を返す', async () => {
