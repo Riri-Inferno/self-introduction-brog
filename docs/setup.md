@@ -21,14 +21,14 @@
 
 | 方法 | 使うとき |
 |------|----------|
-| [Docker Compose で起動する](#docker-compose-で起動する) | ふだんの開発。1回のコマンドで、DB とバックエンドがそろう |
+| [Docker Compose で起動する](#docker-compose-で起動する) | ふだんの開発。1回のコマンドで、DB・バックエンド・フロントエンドがそろう |
 | [バックエンド](#バックエンド)の手順でホストから起動する | 型チェックやテストを流すとき。エディタの補完のため |
 
 テストと型チェックはホストで流すので、Docker Compose で起動するときも、[バックエンド](#バックエンド)の 2 と 3 は1回やっておきます。
 
 ## Docker Compose で起動する
 
-DB とバックエンドを、まとめてコンテナで起動します(理由は [ADR 0019](adr/0019-compose-dev-environment.md))。
+DB・バックエンド・フロントエンドを、まとめてコンテナで起動します(理由は [ADR 0019](adr/0019-compose-dev-environment.md))。
 
 ```bash
 # 実行場所: self-introduce/
@@ -203,7 +203,31 @@ npm run test:integration
 
 ## フロントエンド
 
-準備ができ次第ここに書きます。
+Vite + React + TypeScript + Tailwind CSS です。Docker Compose で起動していれば、フロントエンドも一緒に起動しています。
+
+| URL | 内容 |
+|-----|------|
+| http://localhost:5173 | 画面。今は動作確認用のページ(赤い見出しと、`/api/public/profile` の中身)だけ |
+
+画面からの `/api` へのリクエストは、Vite のプロキシでバックエンドに流れます(`frontend/vite.config.ts`)。ファイルを保存すると、ブラウザの表示が自動で変わります。
+
+型チェックやエディタの補完のために、ホストにも依存を入れておきます。
+
+```bash
+# 実行場所: self-introduce/frontend
+npm install
+npm run typecheck
+```
+
+ホストで起動するときは、先にコンテナのフロントエンドを止めます(ポート 5173 がぶつかるため)。プロキシの先は `http://localhost:3000` になるので、バックエンドもどこかで起動しておきます。
+
+```bash
+# 実行場所: self-introduce/
+docker compose stop frontend
+
+# 実行場所: self-introduce/frontend
+npm run dev
+```
 
 ## スキーマを変えたとき
 
