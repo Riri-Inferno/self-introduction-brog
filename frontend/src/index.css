@@ -1,0 +1,2 @@
+/* Tailwind を読み込む。スタイルはクラス名(text-red-600 など)で書き、CSS は直接書かない */
+@import "tailwindcss";
