@@ -11,6 +11,7 @@ const apiTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:3000'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  /** ローカル開発環境のみ */
   server: {
     // コンテナの外(ホストのブラウザ)から届くようにする
     host: '0.0.0.0',
