@@ -3,6 +3,7 @@
 ローカルで開発環境を作る手順です。コマンドのブロックには、実行場所をリポジトリ直下からの相対パスで書いています。
 
 - [全体](#全体)
+- [Docker Compose で起動する](#docker-compose-で起動する)
 - [DB](#db)
 - [バックエンド](#バックエンド)
 - [フロントエンド](#フロントエンド)
@@ -14,15 +15,64 @@
 前提として次のものが要ります。
 
 - Node.js 22 以上(`node -v` で確認)
-- Docker(DB を起動するため)
+- Docker(Docker Compose を含む)
 
-## DB
+起動の方法は2つあります。
 
-PostgreSQL 18 を Docker Compose で起動します。
+| 方法 | 使うとき |
+|------|----------|
+| [Docker Compose で起動する](#docker-compose-で起動する) | ふだんの開発。1回のコマンドで、DB とバックエンドがそろう |
+| [バックエンド](#バックエンド)の手順でホストから起動する | 型チェックやテストを流すとき。エディタの補完のため |
+
+テストと型チェックはホストで流すので、Docker Compose で起動するときも、[バックエンド](#バックエンド)の 2 と 3 は1回やっておきます。
+
+## Docker Compose で起動する
+
+DB とバックエンドを、まとめてコンテナで起動します(理由は [ADR 0019](adr/0019-compose-dev-environment.md))。
 
 ```bash
 # 実行場所: self-introduce/
 docker compose up -d
+docker compose logs -f backend   # 起動の様子を見る。Ctrl+C で抜ける(コンテナは止まらない)
+```
+
+`Server listening at http://...:3000` という行が出たら起動しています。最初の起動は、`npm install` の分だけ時間がかかります。
+
+バックエンドのコンテナは、起動のたびに次の順で処理します。どれも、何度流しても同じ結果になります。
+
+1. `npm install`(package.json に合わせて依存を入れる)
+2. `prisma generate`
+3. `prisma migrate deploy`(未適用のマイグレーションを当てる)
+4. `npm run dev`(`tsx watch`)
+
+ファイルを保存すると、自動で再起動します。確かめる URL は、[5. サーバーを起動する](#5-サーバーを起動する)と同じです。
+
+止めるとき:
+
+```bash
+# 実行場所: self-introduce/
+docker compose down
+```
+
+`down` しても、DB のデータは消えません(volume に残ります)。
+
+### 環境変数
+
+`.env` をコピーする必要はありません。コンテナは次の順で環境変数を読みます。
+
+1. `backend/.env.example`
+2. `backend/.env`(あれば。1 の値を上書きする)
+3. docker-compose.yml の `environment`(さらに上書きする)
+
+3 では、コンテナの中でだけ変わる値を指定しています。`DATABASE_URL` の接続先を `db:5432` に、`HOST` を `0.0.0.0` にしています。そのため、`.env` はホストで動かすときの内容のままでかまいません。
+
+## DB
+
+PostgreSQL 18 を Docker Compose で起動します。DB だけを起動するときは、サービス名を付けます。
+
+```bash
+# 実行場所: self-introduce/
+docker compose up -d db
 ```
 
 接続情報は docker-compose.yml に書いてあります。
@@ -39,6 +89,8 @@ docker compose up -d
 DBeaver などの GUI から接続するときも、この値を使います。テーブルの作成は、次のバックエンドの手順で行います。
 
 ## バックエンド
+
+ホストでバックエンドを動かす手順です。Docker Compose で起動するときは、2 と 3 だけ1回やっておきます。
 
 ### 1. 環境変数を用意する
 
@@ -105,11 +157,19 @@ docker exec self-introduce-db psql -U app -d self_introduce -tAc \
 npm run dev
 ```
 
+Docker Compose でバックエンドを起動していると、ポート 3000 がぶつかって起動できません。先に止めます。
+
+```bash
+# 実行場所: self-introduce/
+docker compose stop backend
+```
+
 ファイルを保存すると自動で再起動します。起動したら、次の URL で確かめられます。
 
 | URL | 内容 |
 |-----|------|
 | http://localhost:3000/api/public/profile | プロフィール。データがなければ 404 の `NOT_FOUND` が返る |
+| http://localhost:3000/api/public/skills | スキル。データがなければ `categories` が空の配列で返る |
 | http://localhost:3000/docs | OpenAPI の画面(本番では出さない) |
 
 環境変数に誤りがあると、どの変数が誤っているかを表示して起動が止まります。変数の一覧と初期値は [ADR 0016](adr/0016-env-config-validation.md) にあります。
@@ -180,6 +240,22 @@ Prisma は schema にない CHECK 制約を差分として扱わないので、�
 
 - `docker ps` で `self-introduce-db` が `Up` になっているか確かめる
 - Windows 側にも PostgreSQL が入っていると、5432 番ポートがそちらに取られて認証エラーになる。この場合は docker-compose.yml のポートを `"5433:5432"` のように変え、`.env` の `DATABASE_URL` のポートも合わせる
+
+### コンテナのバックエンドが起動しない
+
+`docker compose logs backend` でログを見ます。
+
+- `EADDRINUSE` と出る:ホストで `npm run dev` が動いていて、ポート 3000 がぶつかっている。どちらか一方を止める
+- `prisma migrate deploy` で止まる:DB の起動を待ってから流しているので、ふつうは起きません。`docker compose ps` で `self-introduce-db` が `healthy` になっているか確かめる
+
+### 依存を足したのに、コンテナで見つからない
+
+コンテナの `node_modules` は、ホストとは別の volume にあります。起動のたびに `npm install` を流すので、再起動すれば入ります。
+
+```bash
+# 実行場所: self-introduce/
+docker compose restart backend
+```
 
 ### テストや起動が遅い
 

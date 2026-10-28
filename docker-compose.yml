@@ -1,3 +1,6 @@
+# ローカルの開発環境(ADR 0019)
+# docker compose up で、DB とバックエンドを起動する
+
 services:
   db:
     image: postgres:18
@@ -12,6 +15,53 @@ services:
     volumes:
       # /var/lib/postgresql
       - db-data:/var/lib/postgresql
+    # 接続を受け付けられるようになったかを確かめる。backend はこれを待ってから起動する
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d self_introduce"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  backend:
+    build: ./backend
+    container_name: self-introduce-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    # 1. 雛形の .env.example を読む
+    # 2. .env があれば、その値で上書きする(なくてもよい)
+    env_file:
+      - path: backend/.env.example
+      - path: backend/.env
+        required: false
+    # コンテナの中でだけ変わる値。env_file より優先される
+    environment:
+      # コンテナ同士はサービス名で呼ぶ
+      DATABASE_URL: postgresql://app:app@db:5432/self_introduce
+      # コンテナの外(ホストのブラウザや curl)から届くようにする
+      HOST: 0.0.0.0
+      # /mnt/c ではファイルの変更が通知されないので、ポーリングで検知する
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+      # 起動のたびに出る「新しい版があります」の案内を消す
+      PRISMA_HIDE_UPDATE_MESSAGE: "true"
+    # 起動のたびに次の順で流す。どれも何度流しても同じ結果になる
+    #   1. package.json に合わせて依存を入れる
+    #   2. Prisma Client を生成する
+    #   3. 未適用のマイグレーションを当てる(マイグレーションを作る migrate dev はホストで打つ)
+    #   4. tsx watch で起動する
+    command: >
+      sh -c "npm install
+      && npx prisma generate
+      && npx prisma migrate deploy
+      && npm run dev"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      # node_modules はコンテナ専用の volume に置き、ホストのものと混ぜない
+      - backend-node-modules:/app/node_modules
 
 volumes:
   db-data:
+  backend-node-modules:
