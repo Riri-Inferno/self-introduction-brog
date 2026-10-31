@@ -53,6 +53,7 @@ Status ごとに表を分けている。Status が変わったら、行を該当
 | [0018](0018-locale-fallback.md) | 閲覧用 API は ?locale で言語を受け取り、翻訳がなければ ja で返す (0002 補足) |
 | [0019](0019-compose-dev-environment.md) | 開発環境は docker compose up 1回で、DB・バックエンド・フロントエンドを立てる |
 | [0020](0020-openapi-type-generation.md) | フロントエンドの API の型は、OpenAPI から自動で生成する (0014 補足) |
+| [0021](0021-frontend-atomic-design.md) | フロントエンドの部品は Atomic Design の5層に分け、API はページだけが呼ぶ |
 
 ### Superseded / Deprecated(置き換え済み・廃止)
 
